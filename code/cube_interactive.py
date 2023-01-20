@@ -4,9 +4,17 @@
 # Adapted from cube code written by David Hogg
 #   https://github.com/davidwhogg/MagicCube
 
+
+# http://kociemba.org/computervision.html
+
+from __future__ import annotations
+from xml.sax.handler import feature_string_interning
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import widgets
+from matplotlib.patches import Rectangle, PathPatch
+from matplotlib.text import TextPath
+from matplotlib.transforms import Affine2D
 from projection import Quaternion, project_points
 
 """
@@ -158,6 +166,41 @@ class Cube:
         self._colors = self._colors[ind]
         self._faces = self._faces[ind]
 
+    def match(self, other):
+        
+        result = []
+
+        for s in range(self.N * self.N * 6):
+            match = False
+            for t in range(self.N * self.N * 6):
+
+                cmatch = True
+                for i in range(9):
+                    pmatch = False
+                    for j in range(9):
+                        if np.allclose(self._stickers[s,i], other._stickers[t,j], .01, .01):
+                            pmatch = True
+                            break
+
+                    if pmatch == False:
+                        cmatch = False
+                        break
+
+                if cmatch == True:
+                    match = True
+                    #print(s, t)
+                    result.append(t)
+                    break
+
+            if match == False:
+                print ("No match for ", s)
+
+        if len(result) == self.N * self.N * 6:
+            return result
+
+        return None
+
+
     def rotate_face(self, f, n=1, layer=0):
         """Rotate Face"""
         if layer < 0 or layer >= self.N:
@@ -259,6 +302,7 @@ class InteractiveCube(plt.Axes):
         self._current_rot = self._start_rot  #current rotation state
         self._face_polys = None
         self._sticker_polys = None
+        self._labels = None
 
         self._draw_cube()
 
@@ -290,7 +334,8 @@ class InteractiveCube(plt.Axes):
 
         self._ax_solve = self.figure.add_axes([0.55, 0.05, 0.2, 0.075])
         self._btn_solve = widgets.Button(self._ax_solve, 'Solve Cube')
-        self._btn_solve.on_clicked(self._solve_cube)
+        #self._btn_solve.on_clicked(self._solve_cube)
+        self._btn_solve.on_clicked(self.find_generators)
 
     def _project(self, pts):
         return project_points(pts, self._current_rot, self._view, [0, 1, 0])
@@ -310,6 +355,7 @@ class InteractiveCube(plt.Axes):
             # initial call: create polygon objects and add to axes
             self._face_polys = []
             self._sticker_polys = []
+            self._labels = []
 
             for i in range(len(colors)):
                 fp = plt.Polygon(faces[i], facecolor=plastic_color,
@@ -317,10 +363,15 @@ class InteractiveCube(plt.Axes):
                 sp = plt.Polygon(stickers[i], facecolor=colors[i],
                                  zorder=sticker_zorders[i])
 
+                #lb = self.figure.text(0.2, 0.2 + i * .05, str(i), size=10)
+                lb = self.annotate(str(i), xy=sticker_centroids[i][:2], textcoords='data')
+
                 self._face_polys.append(fp)
                 self._sticker_polys.append(sp)
+                self._labels.append(lb)
                 self.add_patch(fp)
                 self.add_patch(sp)
+                
         else:
             # subsequent call: update the polygon objects
             for i in range(len(colors)):
@@ -331,6 +382,12 @@ class InteractiveCube(plt.Axes):
                 self._sticker_polys[i].set_xy(stickers[i])
                 self._sticker_polys[i].set_zorder(sticker_zorders[i])
                 self._sticker_polys[i].set_facecolor(colors[i])
+
+                #self._labels[i].set_position((sticker_centroids[i][0], sticker_centroids[i][1]))
+
+                self._labels[i].set_position(sticker_centroids[i][:2])
+                self._labels[i].set_zorder(face_zorders[i] + .1)
+
 
         self.figure.canvas.draw()
 
@@ -393,8 +450,29 @@ class InteractiveCube(plt.Axes):
                     self.rotate_face(event.key.upper(), direction, layer=d)
             else:
                 self.rotate_face(event.key.upper(), direction)
+
+        oc = Cube(self.cube.N)
+
+        print(self.cube.match(oc))
                 
         self._draw_cube()
+
+    def find_generators(self, *args):
+
+        base_cube = Cube(self.cube.N)
+        for face, axis in self.cube.facesdict.items():
+            for i in range(-1, 2, 2):
+
+                oc = Cube(self.cube.N)
+                oc.rotate_face(face, i)
+
+                matches = oc.match(base_cube)
+
+                # [ (('x', -1), [1,2,3,4])]
+                print("(('{0}', {1}), {2})".format(face, i, matches))
+
+
+
 
     def _key_release(self, event):
         """Handler for key release event"""

@@ -38,7 +38,7 @@ class Quaternion:
         return cls(x)
 
     def __init__(self, x):
-        self.x = np.asarray(x, dtype=float)
+        self.x = np.asarray(x, dtype=np.float32)
 
     def __repr__(self):
         return "Quaternion:\n" + self.x.__repr__()
@@ -61,7 +61,7 @@ class Quaternion:
                          + prod[2, 0] + prod[3, 1]),
                         (prod[0, 3] + prod[1, 2]
                          - prod[2, 1] + prod[3, 0])],
-                       dtype=np.float,
+                       dtype=np.float32,
                        order='F').T
         return self.__class__(ret.reshape(return_shape))
 
