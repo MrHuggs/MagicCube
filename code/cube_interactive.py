@@ -8,6 +8,7 @@
 # http://kociemba.org/computervision.html
 
 from __future__ import annotations
+from msilib import sequence
 from xml.sax.handler import feature_string_interning
 import numpy as np
 import matplotlib.pyplot as plt
@@ -59,10 +60,16 @@ class Cube:
 
     # This produces the standard wester color scheme:
     # https://getgocube.com/play/japanese-vs-western-colors/
+    # w       - white
+    # #ffcf00 - yellow
+    # #00008f - blue
+    # #009f0f - green
+    # #cf0000 - red
+    # #ff6f00 - orange
 
     default_face_colors = ["w", "#ffcf00",
+                           "#ff6f00", "#cf0000",
                            "#00008f", "#009f0f",
-                           "#cf0000", "#ff6f00",
                            "gray", "none"]
     
     base_face = np.array([[1, 1, 1],
@@ -466,6 +473,8 @@ class InteractiveCube(plt.Axes):
     def find_generators(self, *args):
 
         base_cube = Cube(self.cube.N)
+        sequences = []
+        names = []
         for face, axis in self.cube.facesdict.items():
             for i in range(-1, 2, 2):
 
@@ -473,11 +482,24 @@ class InteractiveCube(plt.Axes):
                 oc.rotate_face(face, i)
 
                 matches = oc.match(base_cube)
+                
+                name = "{{ \"{0}\", {1}),}}".format(face, i)
+                seq = "{"
+                for idx, num in enumerate(matches):
+                    seq += " /*{0:2}*/ {1:2},".format(idx, num)
 
-                # [ (('x', -1), [1,2,3,4])]
-                print("(('{0}', {1}), {2})".format(face, i, matches))
+                seq += "},"
+                seq = "/*{0:2} - {1:2} : {2:2} */ \t".format(len(sequences), face, i) + seq
+
+                names.append(name)
+                sequences.append(seq)
 
 
+        for name in names:
+            print(name)
+
+        for seq in sequences:
+            print(seq)
 
 
     def _key_release(self, event):
