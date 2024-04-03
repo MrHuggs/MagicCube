@@ -4,3 +4,7 @@
 *.pdf
 *.pyc
 *.png
+
+code/env
+.vs
+
