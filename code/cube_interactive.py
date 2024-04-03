@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from msilib import sequence
+from tkinter.ttk import LabeledScale
 from xml.sax.handler import feature_string_interning
 import numpy as np
 import matplotlib.pyplot as plt
@@ -62,14 +63,14 @@ class Cube:
     # https://getgocube.com/play/japanese-vs-western-colors/
     # w       - white
     # #ffcf00 - yellow
-    # #00008f - blue
+    # #00008f - blue (add8e6 - light blue)
     # #009f0f - green
     # #cf0000 - red
     # #ff6f00 - orange
 
     default_face_colors = ["w", "#ffcf00",
                            "#ff6f00", "#cf0000",
-                           "#00008f", "#009f0f",
+                           "#add8e6", "#009f0f",
                            "gray", "none"]
     
     base_face = np.array([[1, 1, 1],
@@ -256,6 +257,63 @@ class Cube:
         return fig
 
 
+labels3x3 = {
+0:	"1",
+1:	"2",
+2:	"3",
+3:	"4",
+4:	"top",
+5:	"5",
+6:	"6",
+7:	"7",
+8:	"8",
+9:	"46",
+10:		"47",
+11:		"48",
+12:		"44",
+13:		"bottom",
+14:		"45",
+15:		"41",
+16:		"42",
+17:		"43",
+18:		"14",
+19:		"12",
+20:		"9",
+21:		"15",
+22:		"left",
+23:		"10",
+24:		"16",
+25:		"13",
+26:		"11",
+27:		"32",
+28:		"29",
+29:		"27",
+30:		"31",
+31:		"right",
+32:		"26",
+33:		"30",
+34:		"28",
+35:		"25",
+36:		"40",
+37:		"37",
+38:		"35",
+39:		"39",
+40:		"erear",
+41:		"34",
+42:		"38",
+43:		"36",
+44:		"33",
+45:		"22",
+46:		"20",
+47:		"17",
+48:		"23",
+49:		"front",
+50:	    "18",
+51:	    "24",
+52:	    "21",
+53: 	"19",
+    }
+
 class InteractiveCube(plt.Axes):
     def __init__(self, cube=None,
                  interactive=True,
@@ -347,8 +405,15 @@ class InteractiveCube(plt.Axes):
 
         self._ax_solve = self.figure.add_axes([0.55, 0.05, 0.2, 0.075])
         self._btn_solve = widgets.Button(self._ax_solve, 'Solve Cube')
-        #self._btn_solve.on_clicked(self._solve_cube)
-        self._btn_solve.on_clicked(self.find_generators)
+        self._btn_solve.on_clicked(self._solve_cube)
+
+        self._ax_gens = self.figure.add_axes([0.75, 0.05 + 0.075, 0.2, 0.075])
+        self._btn_gens = widgets.Button(self._ax_gens, 'Generators')
+        self._btn_gens.on_clicked(self.find_generators)
+
+        self._apply_ops = self.figure.add_axes([0.55, 0.05 + 0.075, 0.2, 0.075])
+        self._btn_apply_ops = widgets.Button(self._apply_ops, 'Apply Opps')
+        self._btn_apply_ops.on_clicked(self.apply_opps)
 
     def _project(self, pts):
         return project_points(pts, self._current_rot, self._view, [0, 1, 0])
@@ -370,6 +435,8 @@ class InteractiveCube(plt.Axes):
             self._sticker_polys = []
             self._labels = []
 
+            index = 1
+
             for i in range(len(colors)):
                 fp = plt.Polygon(faces[i], facecolor=plastic_color,
                                  zorder=face_zorders[i])
@@ -377,7 +444,10 @@ class InteractiveCube(plt.Axes):
                                  zorder=sticker_zorders[i])
 
                 #lb = self.figure.text(0.2, 0.2 + i * .05, str(i), size=10)
-                lb = self.annotate(str(i), xy=sticker_centroids[i][:2], textcoords='data')
+                if self.cube.N == 3:
+                    lb = self.annotate(labels3x3[i], xy=sticker_centroids[i][:2], textcoords='data')
+                else:
+                    lb = self.annotate(str(i), xy=sticker_centroids[i][:2], textcoords='data')
 
                 self._face_polys.append(fp)
                 self._sticker_polys.append(sp)
@@ -464,32 +534,49 @@ class InteractiveCube(plt.Axes):
             else:
                 self.rotate_face(event.key.upper(), direction)
 
-        oc = Cube(self.cube.N)
-
-        print(self.cube.match(oc))
+            oc = Cube(self.cube.N)
+            print(self.cube.match(oc))
                 
         self._draw_cube()
 
     def find_generators(self, *args):
 
+        print("Finding generators.")
+
         base_cube = Cube(self.cube.N)
         sequences = []
         names = []
+        
+        cformat = False
         for face, axis in self.cube.facesdict.items():
             for i in range(-1, 2, 2):
 
                 oc = Cube(self.cube.N)
-                oc.rotate_face(face, i)
+
+                steps = 5
+                
+                for s in range(steps):
+                    oc.rotate_face(face, i  /steps)
 
                 matches = oc.match(base_cube)
                 
-                name = "{{ \"{0}\", {1}),}}".format(face, i)
-                seq = "{"
-                for idx, num in enumerate(matches):
-                    seq += " /*{0:2}*/ {1:2},".format(idx, num)
+                if cformat == True:
+                    name = "{{ \"{0}\", {1}),}}".format(face, i)
+                    seq = "{"
+                    for idx, num in enumerate(matches):
+                        seq += " /*{0:2}*/ {1:2},".format(idx, num)
 
-                seq += "},"
-                seq = "/*{0:2} - {1:2} : {2:2} */ \t".format(len(sequences), face, i) + seq
+                    seq += "},"
+                    seq = "/*{0:2} - {1:2} : {2:2} */ \t".format(len(sequences), face, i) + seq
+                else:
+                    name = "{0}{1},".format(face, i)
+
+                    seq = "["
+                    for idx, num in enumerate(matches):
+                        seq += " {0},".format(num)
+
+                    seq += "],"
+                    seq = seq + "#*{0:2} - {1:2} : {2:2}".format(len(sequences), face, i)
 
                 names.append(name)
                 sequences.append(seq)
@@ -500,6 +587,25 @@ class InteractiveCube(plt.Axes):
 
         for seq in sequences:
             print(seq)
+
+    def apply_opps(self, *args):
+
+        self.rotate_face('U', -1)
+        self.rotate_face('B', -1)
+        self.rotate_face('U', -1)
+        self.rotate_face('L',  1)
+        self.rotate_face('F',  1)
+        self.rotate_face('U', -1)
+        self.rotate_face('R', -1)
+        self.rotate_face('F',  1)
+        self.rotate_face('U',  1)
+        self.rotate_face('R',  1)
+        self.rotate_face('F', -1)
+
+        oc = Cube(self.cube.N)
+        print(self.cube.match(oc))
+                
+        self._draw_cube()
 
 
     def _key_release(self, event):
