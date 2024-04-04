@@ -19,6 +19,57 @@ from matplotlib.text import TextPath
 from matplotlib.transforms import Affine2D
 from projection import Quaternion, project_points
 
+def point_action(point, perm):
+
+    return perm[point - 1]
+
+def perm_orbits(perm):
+    result = []
+    seen = set()
+
+    orbit_start = 1
+
+    while len(seen) < len(perm):
+        
+        if orbit_start in seen:
+            orbit_start += 1
+            continue
+
+        orbit = [orbit_start]
+        seen.add(orbit_start)
+
+        point = orbit_start
+
+        while True:
+            point = point_action(point, perm)
+
+            if point == orbit_start:
+                break
+
+            orbit.append(point)
+            seen.add(point)
+
+        result.append(orbit)
+        orbit_start += 1
+
+    return result
+   
+
+def perm_to_string(perm):
+    orbits = perm_orbits(perm)
+
+    result = '['
+    for orbit in orbits:
+
+        if len(orbit) == 1:
+            continue
+
+        result = result + str(orbit)
+
+
+    result = result + ']'
+    return result
+
 """
 Sticker representation
 ----------------------
@@ -203,7 +254,7 @@ class Cube:
                 if cmatch == True:
                     match = True
                     #print(s, t)
-                    result.append(t)
+                    result.append(t + 1)
                     break
 
             if match == False:
@@ -447,7 +498,7 @@ class InteractiveCube(plt.Axes):
                 if self.cube.N == 3:
                     lb = self.annotate(labels3x3[i], xy=sticker_centroids[i][:2], textcoords='data')
                 else:
-                    lb = self.annotate(str(i), xy=sticker_centroids[i][:2], textcoords='data')
+                    lb = self.annotate(str(i + 1), xy=sticker_centroids[i][:2], textcoords='data')
 
                 self._face_polys.append(fp)
                 self._sticker_polys.append(sp)
@@ -535,7 +586,8 @@ class InteractiveCube(plt.Axes):
                 self.rotate_face(event.key.upper(), direction)
 
             oc = Cube(self.cube.N)
-            print(self.cube.match(oc))
+            perm = self.cube.match(oc)
+            print(perm_to_string(perm), " = ", perm)
                 
         self._draw_cube()
 
@@ -588,22 +640,32 @@ class InteractiveCube(plt.Axes):
         for seq in sequences:
             print(seq)
 
+    def apply_string(self, s):
+        
+        trans_table = { 
+            'f' : "F",
+            'b' : "B",
+            'l' : "L",
+            'r' : "R",
+            't' : "U",
+            'e' : "D",
+            }
+        
+        for op in s.split(" * "):
+            if op[0] == '(':
+                face = op[1] #trans_table[op[1]]
+                dir = -1
+            else:                
+                face = op[0] # trans_table[op[0]]
+                dir = 1
+                
+            print("Applying {0} : {1}".format(face, dir))
+            self.cube.rotate_face(face, dir)
+
+
     def apply_opps(self, *args):
 
-        self.rotate_face('U', -1)
-        self.rotate_face('B', -1)
-        self.rotate_face('U', -1)
-        self.rotate_face('L',  1)
-        self.rotate_face('F',  1)
-        self.rotate_face('U', -1)
-        self.rotate_face('R', -1)
-        self.rotate_face('F',  1)
-        self.rotate_face('U',  1)
-        self.rotate_face('R',  1)
-        self.rotate_face('F', -1)
-
-        oc = Cube(self.cube.N)
-        print(self.cube.match(oc))
+        self.apply_string("D * R * (D)^-1 * (R)^-1 * (L)^-1 * F * L * (D)^-1 * R * D * (R)^-1 * (D)^-1 * (R)^-1 * D * (L)^-1 * (F)^-1 * L * R")
                 
         self._draw_cube()
 
