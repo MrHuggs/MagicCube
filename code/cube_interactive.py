@@ -19,6 +19,71 @@ from matplotlib.text import TextPath
 from matplotlib.transforms import Affine2D
 from projection import Quaternion, project_points
 
+
+labels3x3 = {
+0:	1,
+1:	2,
+2:	3,
+3:	4,
+4:	'top',
+5:	5,
+6:	6,
+7:	7,
+8:	8,
+9:	46,
+10:		47,
+11:		48,
+12:		44,
+13:		'bottom',
+14:		45,
+15:		41,
+16:		42,
+17:		43,
+18:		14,
+19:		12,
+20:		9,
+21:		15,
+22:		'left',
+23:		10,
+24:		16,
+25:		13,
+26:		11,
+27:		32,
+28:		29,
+29:		27,
+30:		31,
+31:		'right',
+32:		26,
+33:		30,
+34:		28,
+35:		25,
+36:		40,
+37:		37,
+38:		35,
+39:		39,
+40:		'erear',
+41:		34,
+42:		38,
+43:		36,
+44:		33,
+45:		22,
+46:		20,
+47:		17,
+48:		23,
+49:		'front',
+50:	    18,
+51:	    24,
+52:	    21,
+53: 	19,
+    }
+
+def translateid(faceid):
+    if N == 3:
+        return labels3x3[faceid - 1]
+    else:
+        return faceid
+
+
 def point_action(point, perm):
 
     return perm[point - 1]
@@ -53,9 +118,29 @@ def perm_orbits(perm):
         orbit_start += 1
 
     return result
-   
+
 
 def perm_to_string(perm):
+
+    orbits = perm_orbits(perm)
+    
+    result = '['
+    for orbit in orbits:
+
+        if len(orbit) == 1:
+            continue
+        
+        torbit = [str(translateid(p)) for p in orbit]
+
+        result = result + "[" + ",".join(torbit) + "]"
+        
+
+    result = result + ']'
+    
+    return result
+   
+
+def xperm_to_string(perm):
     orbits = perm_orbits(perm)
 
     result = '['
@@ -308,63 +393,6 @@ class Cube:
         return fig
 
 
-labels3x3 = {
-0:	"1",
-1:	"2",
-2:	"3",
-3:	"4",
-4:	"top",
-5:	"5",
-6:	"6",
-7:	"7",
-8:	"8",
-9:	"46",
-10:		"47",
-11:		"48",
-12:		"44",
-13:		"bottom",
-14:		"45",
-15:		"41",
-16:		"42",
-17:		"43",
-18:		"14",
-19:		"12",
-20:		"9",
-21:		"15",
-22:		"left",
-23:		"10",
-24:		"16",
-25:		"13",
-26:		"11",
-27:		"32",
-28:		"29",
-29:		"27",
-30:		"31",
-31:		"right",
-32:		"26",
-33:		"30",
-34:		"28",
-35:		"25",
-36:		"40",
-37:		"37",
-38:		"35",
-39:		"39",
-40:		"erear",
-41:		"34",
-42:		"38",
-43:		"36",
-44:		"33",
-45:		"22",
-46:		"20",
-47:		"17",
-48:		"23",
-49:		"front",
-50:	    "18",
-51:	    "24",
-52:	    "21",
-53: 	"19",
-    }
-
 class InteractiveCube(plt.Axes):
     def __init__(self, cube=None,
                  interactive=True,
@@ -450,20 +478,31 @@ class InteractiveCube(plt.Axes):
                          size=10)
 
     def _initialize_widgets(self):
-        self._ax_reset = self.figure.add_axes([0.75, 0.05, 0.2, 0.075])
-        self._btn_reset = widgets.Button(self._ax_reset, 'Reset View')
+        bwidth = .1
+        bspace = .0
+        bstart = .55
+        bheight = .075
+        self._ax_reset = self.figure.add_axes([bstart + bwidth + bspace, .05 + bheight, bwidth, bheight])
+        self._btn_reset = widgets.Button(self._ax_reset, 'Reset\nView')
         self._btn_reset.on_clicked(self._reset_view)
 
-        self._ax_solve = self.figure.add_axes([0.55, 0.05, 0.2, 0.075])
-        self._btn_solve = widgets.Button(self._ax_solve, 'Solve Cube')
+        self._ax_solve = self.figure.add_axes([bstart, 0.05,bwidth, bheight])
+        self._btn_solve = widgets.Button(self._ax_solve, 'Solve\nCube')
         self._btn_solve.on_clicked(self._solve_cube)
 
-        self._ax_gens = self.figure.add_axes([0.75, 0.05 + 0.075, 0.2, 0.075])
-        self._btn_gens = widgets.Button(self._ax_gens, 'Generators')
+        self._ax_gens = self.figure.add_axes([bstart + bwidth + bspace, 0.05, bwidth, bheight])
+        self._btn_gens = widgets.Button(self._ax_gens, 'Gens')
         self._btn_gens.on_clicked(self.find_generators)
+        
+        self._ax_gens = self.figure.add_axes([bstart + 2 * bwidth + 2* bspace, 0.05, bwidth, bheight])
+        self._btn_gens = widgets.Button(self._ax_gens, 'Save\nImage')
+        self.image_count = 0
+        self._btn_gens.on_clicked(self.save_image)
 
-        self._apply_ops = self.figure.add_axes([0.55, 0.05 + 0.075, 0.2, 0.075])
-        self._btn_apply_ops = widgets.Button(self._apply_ops, 'Apply Opps')
+        self._apply_ops = self.figure.add_axes([bstart, .05 + bheight, bwidth, bheight])
+        self.current_op = 0
+        self.ops_text = self.figure.text(0.05, 0.9, "", size=10, wrap = True)
+        self._btn_apply_ops = widgets.Button(self._apply_ops, 'Opp {0}'.format(self.current_op))
         self._btn_apply_ops.on_clicked(self.apply_opps)
 
     def _project(self, pts):
@@ -495,10 +534,7 @@ class InteractiveCube(plt.Axes):
                                  zorder=sticker_zorders[i])
 
                 #lb = self.figure.text(0.2, 0.2 + i * .05, str(i), size=10)
-                if self.cube.N == 3:
-                    lb = self.annotate(labels3x3[i], xy=sticker_centroids[i][:2], textcoords='data')
-                else:
-                    lb = self.annotate(str(i + 1), xy=sticker_centroids[i][:2], textcoords='data')
+                lb = self.annotate(translateid(i + 1), xy=sticker_centroids[i][:2], textcoords='data')
 
                 self._face_polys.append(fp)
                 self._sticker_polys.append(sp)
@@ -546,6 +582,7 @@ class InteractiveCube(plt.Axes):
         for (face, n, layer) in move_list[::-1]:
             self.rotate_face(face, -n, layer, steps=3)
         self.cube._move_list = []
+        self.ops_text.set_text("")
 
     def _key_press(self, event):
         """Handler for key press events"""
@@ -601,7 +638,8 @@ class InteractiveCube(plt.Axes):
         
         cformat = False
         for face, axis in self.cube.facesdict.items():
-            for i in range(-1, 2, 2):
+            #for i in range(-1, 2, 2):
+            for i in range(1,2):                
 
                 oc = Cube(self.cube.N)
 
@@ -616,19 +654,22 @@ class InteractiveCube(plt.Axes):
                     name = "{{ \"{0}\", {1}),}}".format(face, i)
                     seq = "{"
                     for idx, num in enumerate(matches):
-                        seq += " /*{0:2}*/ {1:2},".format(idx, num)
+                        seq += " /*{0:2}*/ {1:2},".format(idx, translateid(num))
 
                     seq += "},"
                     seq = "/*{0:2} - {1:2} : {2:2} */ \t".format(len(sequences), face, i) + seq
                 else:
                     name = "{0}{1},".format(face, i)
 
+                    
                     seq = "["
                     for idx, num in enumerate(matches):
-                        seq += " {0},".format(num)
+                        seq += " {0},".format(translateid(num))
 
                     seq += "],"
-                    seq = seq + "#*{0:2} - {1:2} : {2:2}".format(len(sequences), face, i)
+                    seq = seq + "#*{0:2} - {1:2} : {2:2} = {3}".format(len(sequences), face, i, perm_to_string(matches))
+                    
+                    seq = perm_to_string(matches) + " # " + name
 
                 names.append(name)
                 sequences.append(seq)
@@ -664,11 +705,39 @@ class InteractiveCube(plt.Axes):
 
 
     def apply_opps(self, *args):
+        
+        ops = [  "D",
+               "F * R * F * (R)^-1 * (D)^-1 * (F)^-1",  # bottom corners
+                "D * F * D * D * (F)^-1 * (D)^-1 * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D",
+               ]
 
-        self.apply_string("D * R * (D)^-1 * (R)^-1 * (L)^-1 * F * L * (D)^-1 * R * D * (R)^-1 * (D)^-1 * (R)^-1 * D * (L)^-1 * (F)^-1 * L * R")
+        s = ops[self.current_op]
+        self.apply_string(s)
+        #self.apply_string("F * D * F * D * D * (F)^-1 * (D)^-1 * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D * (F)^-1")
+        #self.apply_string("B * F * B * B * (F)^-1 * (B)^-1 * F * B * (F)^-1 * (B)^-1 * F * (B)^-1 * (F)^-1 * B * B * F * B * (F)^-1 * B * F * (B)^-1 * (F)^-1 * B * F * (B)^-1 * (B)^-1 * (F)^-1 * B")
+        #self.apply_string("F * D * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * (F)^-1")
+        #self.apply_string("F * D * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1")
                 
         self._draw_cube()
-
+        
+        oc = Cube(self.cube.N)
+        perm = self.cube.match(oc)
+        
+        perm_string = perm_to_string(perm)
+        self.ops_text.set_text(s + "\n" + perm_string)
+        
+        plt.savefig("Opp{0}.png".format(self.current_op))
+        
+        self.current_op = (self.current_op + 1) % len(ops)
+        self._btn_apply_ops.label._text = 'Opp {0}'.format(self.current_op)
+        
+        print("--------------------------------------------------------------")
+        print(s)
+        print(perm_string, " = ", perm)
+        
+    def save_image(self, *args):
+         plt.savefig("Image{0}.png".format(self.image_count))
+         self.image_count += 1
 
     def _key_release(self, event):
         """Handler for key release event"""
@@ -724,6 +793,8 @@ class InteractiveCube(plt.Axes):
 
 if __name__ == '__main__':
     import sys
+    global N
+    
     try:
         N = int(sys.argv[1])
     except:
