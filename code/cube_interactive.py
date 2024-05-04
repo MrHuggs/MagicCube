@@ -695,28 +695,38 @@ class InteractiveCube(plt.Axes):
         for op in s.split(" * "):
             if op[0] == '(':
                 face = op[1] #trans_table[op[1]]
+                count = 1
                 dir = -1
             else:                
                 face = op[0] # trans_table[op[0]]
+                if len(op) > 1:
+                    count = int(op[1])
+                else:
+                    count = 1
                 dir = 1
                 
-            print("Applying {0} : {1}".format(face, dir))
-            self.cube.rotate_face(face, dir)
+            print("Applying {0} : {1} {2} times".format(face, dir, count))
+            for i in range(count):
+                self.cube.rotate_face(face, dir)
 
 
     def apply_opps(self, *args):
         
-        ops = [  "D",
-               "F * R * F * (R)^-1 * (D)^-1 * (F)^-1",  # bottom corners
+        ops = [ "L * (B)^-1 * L * (B)^-1 * (R)^-1 * (U)^-1 * R * B2 * L2 * D * F * D * F * (D)^-1 * (F)^-1 * (D)^-1",
+                "R * F * (R)^-1 * F * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * D * (F)^-1 * D * F * D * R * (F)^-1 * (R)^-1 * (D)^-1 * (D)^-1 * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * (D)^-1 * R * (F)^-1 * (R)^-1 * D * D * F * D * (F)^-1 * D * F * D * D * R * F * (R)^-1 * (D)^-1 * (F)^-1 * (D)^-1 * F * (D)^-1 * (D)^-1 * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * F * D * R * (F)^-1 * (R)^-1 * (F)^-1 * (F)^-1 * D * (F)^-1 * D * D * F * D * (F)^-1 * D * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * (D)^-1 * F * D * D * (F)^-1 * D * D * F * D * (F)^-1 * D * F * D * D * (F)^-1 * D * F * D * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D * D * (F)^-1 * (F)^-1",
+                "F * D * F * D * D * (F)^-1 * (D)^-1 * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D * (F)^-1",
+                "F * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * D * (F)^-1 * D * F * D * R * (F)^-1 * (R)^-1 * (D)^-1 * (D)^-1 * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * (D)^-1",
                 "D * F * D * D * (F)^-1 * (D)^-1 * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D",
+                "F * F * D * (F)^-1 * D * F * D * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (D)^-1 * (F)^-1 * (F)^-1 * (D)^-1 * (D)^-1 * F * D * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * F * D * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * (D)^-1",
+                "F * R * F * (R)^-1 * (F)^-1 * L * F * F * (D)^-1 * (F)^-1 * R * (F)^-1 * (R)^-1 * (L)^-1",
+                "B * B * F * D * (F)^-1 * (D)^-1 * (B)^-1 * (B)^-1 * (D)^-1 * (D)^-1 * (R)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1",
+                "F * D * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * (F)^-1",
+               "F * R * F * (R)^-1 * (D)^-1 * (F)^-1",  # bottom corners
+               "B * B * F * D * (F)^-1 * (D)^-1 * (B)^-1 * (B)^-1 * (D)^-1 * (D)^-1 * (R)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1",                
                ]
 
         s = ops[self.current_op]
         self.apply_string(s)
-        #self.apply_string("F * D * F * D * D * (F)^-1 * (D)^-1 * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D * (F)^-1")
-        #self.apply_string("B * F * B * B * (F)^-1 * (B)^-1 * F * B * (F)^-1 * (B)^-1 * F * (B)^-1 * (F)^-1 * B * B * F * B * (F)^-1 * B * F * (B)^-1 * (F)^-1 * B * F * (B)^-1 * (B)^-1 * (F)^-1 * B")
-        #self.apply_string("F * D * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * (F)^-1")
-        #self.apply_string("F * D * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1")
                 
         self._draw_cube()
         
