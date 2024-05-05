@@ -500,7 +500,11 @@ class InteractiveCube(plt.Axes):
         self._btn_gens.on_clicked(self.save_image)
 
         self._apply_ops = self.figure.add_axes([bstart, .05 + bheight, bwidth, bheight])
-        self.current_op = 0
+        
+        if self.cube.N == 2:
+            self.current_op = 4
+        else:        
+            self.current_op = 0
         self.ops_text = self.figure.text(0.05, 0.9, "", size=10, wrap = True)
         self._btn_apply_ops = widgets.Button(self._apply_ops, 'Opp {0}'.format(self.current_op))
         self._btn_apply_ops.on_clicked(self.apply_opps)
@@ -712,17 +716,15 @@ class InteractiveCube(plt.Axes):
 
     def apply_opps(self, *args):
         
-        ops = [ "L * (B)^-1 * L * (B)^-1 * (R)^-1 * (U)^-1 * R * B2 * L2 * D * F * D * F * (D)^-1 * (F)^-1 * (D)^-1",
-                "R * F * (R)^-1 * F * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * D * (F)^-1 * D * F * D * R * (F)^-1 * (R)^-1 * (D)^-1 * (D)^-1 * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * (D)^-1 * R * (F)^-1 * (R)^-1 * D * D * F * D * (F)^-1 * D * F * D * D * R * F * (R)^-1 * (D)^-1 * (F)^-1 * (D)^-1 * F * (D)^-1 * (D)^-1 * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * F * D * R * (F)^-1 * (R)^-1 * (F)^-1 * (F)^-1 * D * (F)^-1 * D * D * F * D * (F)^-1 * D * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * (D)^-1 * F * D * D * (F)^-1 * D * D * F * D * (F)^-1 * D * F * D * D * (F)^-1 * D * F * D * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D * D * (F)^-1 * (F)^-1",
-                "F * D * F * D * D * (F)^-1 * (D)^-1 * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D * (F)^-1",
-                "F * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * D * (F)^-1 * D * F * D * R * (F)^-1 * (R)^-1 * (D)^-1 * (D)^-1 * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * (D)^-1",
-                "D * F * D * D * (F)^-1 * (D)^-1 * F * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * D",
-                "F * F * D * (F)^-1 * D * F * D * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * (D)^-1 * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (D)^-1 * (F)^-1 * (F)^-1 * (D)^-1 * (D)^-1 * F * D * D * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * (D)^-1 * F * D * (F)^-1 * D * F * (D)^-1 * (D)^-1 * (F)^-1 * (D)^-1",
-                "F * R * F * (R)^-1 * (F)^-1 * L * F * F * (D)^-1 * (F)^-1 * R * (F)^-1 * (R)^-1 * (L)^-1",
-                "B * B * F * D * (F)^-1 * (D)^-1 * (B)^-1 * (B)^-1 * (D)^-1 * (D)^-1 * (R)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1",
-                "F * D * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * (F)^-1",
-               "F * R * F * (R)^-1 * (D)^-1 * (F)^-1",  # bottom corners
-               "B * B * F * D * (F)^-1 * (D)^-1 * (B)^-1 * (B)^-1 * (D)^-1 * (D)^-1 * (R)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1",                
+        self._solve_cube();
+        ops = [ 
+		        "L * (B)^-1 * L * (B)^-1 * (R)^-1 * (U)^-1 * R * B2 * L2 * D * F * D * F * (D)^-1 * (F)^-1 * (D)^-1",
+		        "F * (D)^-1 * F * D * (F)^-1 * R2 * (D)^-1 * (B)^-1 * D * B * R2 * D * F * D2 * (F)^-1 * D * (F)^-1",
+		        "F * R * F * (R)^-1 * (D)^-1 * (F)^-1 * L * D * (L)^-1 * D * L * D2 * (L)^-1 * D2 * F * D * R * (F)^-1 * (R)^-1 * D2 * (F)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1 * D2",
+		        "(D)^-1 * F * D * (F)^-1 * R2 * (D)^-1 * (B)^-1 * D * B * R2 * D * F * D2 * (F)^-1 * D",
+		        "F * R * F * (R)^-1 * (F)^-1 * L * F2 * (D)^-1 * (F)^-1 * R * (F)^-1 * (R)^-1 * (L)^-1",
+		        "F * B2 * D * (F)^-1 * (D)^-1 * B2 * D2 * (R)^-1 * (D)^-1 * F * (D)^-1 * (F)^-1",
+		        "F * D * R * F * (R)^-1 * (D)^-1 * (F)^-1 * D * F * D * (F)^-1 * D * F * D * (F)^-1"            
                ]
 
         s = ops[self.current_op]
@@ -736,7 +738,9 @@ class InteractiveCube(plt.Axes):
         perm_string = perm_to_string(perm)
         self.ops_text.set_text(s + "\n" + perm_string)
         
-        plt.savefig("Opp{0}.png".format(self.current_op))
+        fname = "{0}Opp{1}.png".format(self.cube.N, self.current_op)
+        print("Save to file ", fname)
+        plt.savefig(fname)
         
         self.current_op = (self.current_op + 1) % len(ops)
         self._btn_apply_ops.label._text = 'Opp {0}'.format(self.current_op)
